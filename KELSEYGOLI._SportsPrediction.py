@@ -70,23 +70,23 @@ x = scaler.fit_transform(x)
 xtrain,xtest,ytrain,ytest = train_test_split(x,y,test_size=0.2,random_state=42,stratify=y)
 #%%
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 #%%
+nb = GaussianNB()
 sv = SVC(probability=True)
-LR = LogisticRegression()
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
 gb = GradientBoostingClassifier(n_estimators=100, random_state=42)
 #%%
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import make_scorer, mean_squared_error
+from sklearn.metrics import make_scorer, mean_absolute_error
 import pickle as pkl
 #%%
-for model in (sv, LR, rf, gb):
+for model in (nb, sv, rf, gb):
     model.fit(xtrain, ytrain)
     pkl.dump(model, open('C:\\Users\\User\\OneDrive - Ashesi University\\Desktop\\Introduction to AI\\Jupyter Codes'  + model.__class__.__name__ + '.pkl', 'wb'))
     y_pred = model.predict(xtest)
-    scorer = make_scorer(mean_squared_error, squared=False)
+    scorer = make_scorer(mean_absolute_error, greater_is_better=False)
     print(model.__class__.__name__, cross_val_score(model, xtrain, ytrain, cv=2, scoring=scorer))
 #%% md
 # Model Evaluation and Optimization
@@ -98,18 +98,18 @@ parameters = {
     'max_depth': [10, 20, 30]
 }
 
-grid_search = GridSearchCV(RandomForestClassifier(random_state=42), parameters, cv=5, scoring='neg_mean_squared_error')
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42), parameters, cv=5, scoring=scorer)
 grid_search.fit(xtrain, ytrain)
 
 print(f'Best parameters: {grid_search.best_params_}')
-print(f'Best CV MSE: {-grid_search.best_score_}')
+print(f'Best CV MAE: {-grid_search.best_score_}')
 
 best_model = grid_search.best_estimator_
 
 # Evaluate on validation set
 y_pred = best_model.predict(xtest)
-mse = mean_squared_error(ytest, y_pred)
-print(f'Validation MSE: {mse}')
+mae = mean_absolute_error(ytest, y_pred)
+print(f'Validation MAE: {mae}')
 #%% md
 # Testing on a Different Dataset
 #%%
@@ -117,8 +117,8 @@ xtest = players.drop('overall', axis=1)
 ytest = players['overall']
 
 y_test_pred = best_model.predict(xtest)
-test_mse = mean_squared_error(ytest, y_test_pred)
-print(f'Test MSE: {test_mse}')
+test_mae =mean_absolute_error(ytest, y_test_pred)
+print(f'Test MAE: {test_mae}')
 #%% md
 # Deploying the Model on a Web Page
 #%%
